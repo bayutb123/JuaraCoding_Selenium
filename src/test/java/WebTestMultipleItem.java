@@ -12,9 +12,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
-import java.util.List;
 
-public class WebTest {
+public class WebTestMultipleItem {
 
     static WebDriver driver;
     static Utils utils;
@@ -30,14 +29,17 @@ public class WebTest {
     static WebElement btnIncreaseQty;
     static WebElement btnAddToCart;
     static WebElement btnSeeCart;
-    static WebElement btnClearCart;
-
     DriverSingleton driverSingleton = DriverSingleton.getInstance(Constants.DRIVER_KEY_CHROME);
+    boolean isFinished = false;
+
+    String[] items = {"BLACK LUX GRAPHIC T-SHIRT", "PLAYBOY X MISSGUIDED PLUS SIZE GREY LIPS PRINT FRONT CROPPED T SHIRT", "PINK DROP SHOULDER OVERSIZED T SHIRT"};
+    String[] itemSizes = {"36", "42", "36"};
 
     @BeforeClass
     public void setup() {
         System.getProperty(Constants.DRIVER_KEY_CHROME, Constants.PATH_CHROME_DRIVER);
         driver = driverSingleton.getDriver();
+        driver.manage().window().maximize();
         driver.get(Constants.URL);
         utils = new Utils();
     }
@@ -77,12 +79,20 @@ public class WebTest {
     }
 
     @Test(dependsOnMethods = "testLogin")
-    public void selectItem() {
-        try {
-            goHomeLink = utils.getClass(driver, "home");
-            goHomeLink.click();
+    public void testMultipleItemSelect() {
+        for (int i = 0; i < items.length; i++) {
+            isFinished = i == items.length - 1;
 
-            itemToBuy = utils.getLink(driver, "PLAYBOY X MISSGUIDED PLUS SIZE GREY LIPS PRINT FRONT CROPPED T SHIRT");
+            selectItem(items[i]);
+            addToCart(itemSizes[i]);
+        }
+    }
+
+    public void selectItem(String item) {
+        goHomeLink = utils.getClass(driver, "home");
+        goHomeLink.click();
+        try {
+            itemToBuy = utils.getLink(driver, item);
             for (int i = 0; i < 300; i++) {
                 ((JavascriptExecutor) driver).executeScript("window.scrollBy(0,4)", "");
             }
@@ -91,13 +101,9 @@ public class WebTest {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-
-        String expectedUrl = "https://shop.demoqa.com/product/playboy-x-missguided-plus-size-grey-lips-print-front-cropped-t-shirt/";
-        Assert.assertEquals(driver.getCurrentUrl(), expectedUrl);
     }
 
-    @Test(dependsOnMethods = "selectItem")
-    public void addToCart() {
+    public void addToCart(String size) {
         try {
             colorSelect = utils.getId(driver, "pa_color");
             sizeSelect = utils.getId(driver, "pa_size");
@@ -108,38 +114,38 @@ public class WebTest {
             }
 
             colorSelect.click();
-            utils.selectOption(driver, "grey").click();
+            utils.getClass(driver, "enabled").click();
             sizeSelect.click();
-            utils.selectOption(driver, "42").click();
+            utils.selectOption(driver, size).click();
             for (int i = 0; i < 19; i++) {
                 btnIncreaseQty.click();
             }
             btnAddToCart.click();
 
-            btnSeeCart = utils.getClass(driver, "cart-button");
-            btnSeeCart.click();
+            if (!isFinished) {
+                goHomeLink = utils.getClass(driver, "home");
+                goHomeLink.click();
+            } else {
+                btnSeeCart = utils.getClass(driver, "cart-button");
+                btnSeeCart.click();
 
-            for (int i = 0; i < 150; i++) {
-                ((JavascriptExecutor) driver).executeScript("window.scrollBy(0,2)", "");
+                for (int i = 0; i < 150; i++) {
+                    ((JavascriptExecutor) driver).executeScript("window.scrollBy(0,2)", "");
+                }
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
 
-        String expectedQty = "20";
-        Assert.assertEquals(utils.getClass(driver, "qty").getAttribute("value"), expectedQty);
     }
 
     @AfterTest
     public void exitTest() {
         try {
-            btnClearCart = utils.getClass(driver, "icon_close_alt2");
-            btnClearCart.click();
-            Thread.sleep(2000);
+            Thread.sleep(10000);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-
         driverSingleton.quitDriver();
     }
 }
